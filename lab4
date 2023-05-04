@@ -1,0 +1,163 @@
+using System;
+
+interface IString : ICloneable
+{
+     void SetValue(string value);
+     string GetValue();
+}
+
+public class String : IString, IComparable<String>, ICloneable
+{
+    protected string value;
+
+    public String(string value = "")
+    {
+        SetValue(value);
+    }
+
+    public virtual void SetValue(string value)
+    {
+        this.value = value;
+    }
+
+    public string GetValue()
+    {
+        return value;
+    }
+
+    public override string ToString()
+    {
+        return value;
+    }
+
+    public int CompareTo(String other)
+    {
+        return value.CompareTo(other.GetValue());
+    }
+
+    public object Clone()
+    {
+        return new String(value);
+    }
+}
+
+public class DecimalString : String, IComparable<DecimalString>, ICloneable
+{
+    public DecimalString(string value = "") : base(value)
+    {
+        if (value.Length > 0)
+        {
+            char firstChar = value[0];
+            if (firstChar != '+' && firstChar != '-' && !Char.IsDigit(firstChar))
+            {
+                SetValue("");
+            }
+            else if (firstChar == '+' && value.Length == 1)
+            {
+                SetValue("");
+            }
+        }
+    }
+
+    public override void SetValue(string value)
+    {
+        base.SetValue(value);
+
+        if (value.Length > 0)
+        {
+            char firstChar = value[0];
+            if (firstChar != '+' && firstChar != '-' && !Char.IsDigit(firstChar))
+            {
+                this.value = "";
+            }
+            else if (firstChar == '+' && value.Length == 1)
+            {
+                this.value = "";
+            }
+        }
+    }
+
+    public decimal ToDecimal()
+    {
+        decimal result = 0;
+        if (decimal.TryParse(value, out result))
+        {
+            return result;
+        }
+        return 0;
+    }
+
+    public static DecimalString operator -(DecimalString a, DecimalString b)
+    {
+        decimal result = a.ToDecimal() - b.ToDecimal();
+        return new DecimalString(result.ToString());
+    }
+
+    public static bool operator >(DecimalString a, DecimalString b)
+    {
+        return a.ToDecimal() > b.ToDecimal();
+    }
+
+    public static bool operator <(DecimalString a, DecimalString b)
+    {
+        return a.ToDecimal() < b.ToDecimal();
+    }
+
+    public int CompareTo(DecimalString other)
+    {
+        return ToDecimal().CompareTo(other.ToDecimal());
+    }
+
+    public new object Clone()
+    {
+        return new DecimalString(value);
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        IString[] array = new IString[4];
+
+        array[0] = new String("hello");
+        array[1] = new DecimalString("+12423");
+        array[2] = new String("world");
+        array[3] = new DecimalString("-6456");
+
+        Console.WriteLine("Before sorting:");
+        PrintArray(array);
+
+        try
+        {
+            Array.Sort(array);
+
+            Console.WriteLine("After sorting:");
+            PrintArray(array);
+
+            // Clone the first half of the array
+            for (int i = 0; i < array.Length / 2; i++)
+            {
+                array[i] = (IString)array[i].Clone();
+            }
+
+            Console.WriteLine("After cloning:");
+            PrintArray(array);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("An error occurred: " + e.Message);
+        }
+
+        Console.ReadLine();
+    }
+
+    static void PrintArray(IString[] array)
+    {
+        foreach (IString item in array)
+        {
+            Console.WriteLine(item.GetValue());
+        }
+        Console.WriteLine();
+    }
+}
